@@ -87,7 +87,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, email, onLogout }) 
   const handlePin = async (id: string, isPinned: boolean) => {
     try {
       await api.pinNote(token, id, isPinned);
-    } catch {}
+    } catch {
+      // Ignore API error for local preview
+    }
     setNotes(prev => prev.map(n => n.id === id ? { ...n, isPinned } : n));
     showToast(isPinned ? "Note pinned to top" : "Note unpinned");
   };
@@ -95,7 +97,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, email, onLogout }) 
   const handleDelete = async (id: string) => {
     try {
       await api.deleteNote(token, id);
-    } catch {}
+    } catch {
+      // Ignore API error for local preview
+    }
     setNotes(prev => prev.filter(n => n.id !== id));
     showToast("Note deleted.", "error");
   };

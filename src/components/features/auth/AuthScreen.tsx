@@ -38,7 +38,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
       }
       const data = await api.login(email, password);
       onLogin(data.token || "mock-jwt-token", email);
-    } catch (e: any) {
+    } catch {
       // Fallback for UI preview without a real backend (matches original logic)
       onLogin("mock-jwt-token", email);
     } finally {

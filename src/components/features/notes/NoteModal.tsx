@@ -38,8 +38,8 @@ export const NoteModal: React.FC<NoteModalProps> = ({ onClose, onSave, initial }
     try {
       await onSave(title.trim(), content.trim());
       onClose();
-    } catch (e: any) {
-      setError(e.message || "Something went wrong while saving.");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Something went wrong while saving.");
       setIsLoading(false);
     }
   };
