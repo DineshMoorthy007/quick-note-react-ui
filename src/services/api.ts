@@ -25,24 +25,36 @@ export const api = {
    * Generic request wrapper with error handling.
    */
   async request(path: string, options: RequestOptions = {}, token: string | null = null) {
-    const res = await fetch(`${API_BASE}${path}`, {
-      ...options,
-      headers: this.headers(token),
-    });
+    try {
+      const res = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        headers: this.headers(token),
+      });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: res.statusText }));
-      throw new Error(err.message || "Request failed");
+      if (!res.ok) {
+        let errorMessage = "Request failed";
+        try {
+          const err = await res.json();
+          errorMessage = err.message || errorMessage;
+        } catch {
+          // If not JSON, use status text
+          errorMessage = res.statusText || `Error ${res.status}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      return res.json();
+    } catch (error) {
+      if (error instanceof Error) throw error;
+      throw new Error("Network error or unexpected failure");
     }
-
-    return res.json();
   },
 
-  register: (email: string, pass: string) =>
-    api.request("/api/auth/register", { method: "POST", body: JSON.stringify({ email, password: pass }) }),
+  register: (username: string, pass: string) =>
+    api.request("/api/auth/register", { method: "POST", body: JSON.stringify({ username, password: pass }) }),
 
-  login: (email: string, pass: string) =>
-    api.request("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password: pass }) }),
+  login: (username: string, pass: string) =>
+    api.request("/api/auth/login", { method: "POST", body: JSON.stringify({ username, password: pass }) }),
 
   getNotes: (token: string) => 
     api.request("/api/notes", {}, token),

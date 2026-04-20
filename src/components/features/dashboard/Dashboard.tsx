@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { Note } from '../../../types/note';
 import { api } from '../../../services/api';
-import { genId } from '../../../utils/formatters';
+
 import { Header } from './Header';
 import { Toolbar } from './Toolbar';
 import { NoteGrid } from '../notes/NoteGrid';
@@ -13,7 +13,7 @@ import { Toast } from '../../ui/Toast';
  */
 export interface DashboardProps {
   token: string;
-  email: string;
+  username: string;
   onLogout: () => void;
 }
 
@@ -21,7 +21,7 @@ export interface DashboardProps {
  * The primary layout and state container for the authenticated view.
  * Coordinates note management, search, and UI state (modals/toasts).
  */
-export const Dashboard: React.FC<DashboardProps> = ({ token, email, onLogout }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ token, username, onLogout }) => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -42,8 +42,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, email, onLogout }) 
     try {
       const data = await api.getNotes(token);
       setNotes(data);
-    } catch {
-      // Fallback behavior from original ClaudePrototype
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to load notes";
+      showToast(msg, "error");
       setNotes([]);
     } finally {
       setLoading(false);
@@ -58,50 +59,46 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, email, onLogout }) 
     try {
       await api.createNote(token, title, content);
       await fetchNotes();
-    } catch {
-      // Optimistic local add for mock/preview purposes
-      const newNote: Note = {
-        id: genId(),
-        title,
-        content,
-        isPinned: false,
-        createdAt: new Date().toISOString()
-      };
-      setNotes(prev => [newNote, ...prev]);
+      showToast("Note successfully created!");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to create note";
+      showToast(msg, "error");
     }
-    showToast("Note successfully created!");
   };
 
   const handleUpdate = async (title: string, content: string) => {
     if (!editingNote) return;
     try {
       await api.updateNote(token, editingNote.id, title, content);
-    } catch {
-      // Update locally if API fails in preview
+      setNotes(prev => prev.map(n => n.id === editingNote.id ? { ...n, title, content } : n));
+      setEditingNote(null);
+      showToast("Note updated correctly.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to update note";
+      showToast(msg, "error");
     }
-    setNotes(prev => prev.map(n => n.id === editingNote.id ? { ...n, title, content } : n));
-    setEditingNote(null);
-    showToast("Note updated correctly.");
   };
 
   const handlePin = async (id: string, isPinned: boolean) => {
     try {
       await api.pinNote(token, id, isPinned);
-    } catch {
-      // Ignore API error for local preview
+      setNotes(prev => prev.map(n => n.id === id ? { ...n, isPinned } : n));
+      showToast(isPinned ? "Note pinned to top" : "Note unpinned");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to pin note";
+      showToast(msg, "error");
     }
-    setNotes(prev => prev.map(n => n.id === id ? { ...n, isPinned } : n));
-    showToast(isPinned ? "Note pinned to top" : "Note unpinned");
   };
 
   const handleDelete = async (id: string) => {
     try {
       await api.deleteNote(token, id);
-    } catch {
-      // Ignore API error for local preview
+      setNotes(prev => prev.filter(n => n.id !== id));
+      showToast("Note deleted.", "error");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete note";
+      showToast(msg, "error");
     }
-    setNotes(prev => prev.filter(n => n.id !== id));
-    showToast("Note deleted.", "error");
   };
 
   // Logic for filtering and sorting notes (pinned items first)
@@ -118,7 +115,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, email, onLogout }) 
   return (
     <div className="min-h-screen bg-[#f8f9fc]">
       <Header 
-        email={email} 
+        username={username} 
         onLogout={onLogout} 
         search={search} 
         onSearchChange={setSearch} 

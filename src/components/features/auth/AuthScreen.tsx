@@ -8,7 +8,7 @@ import { api } from '../../../services/api';
  * @param onLogin - Callback for successful authentication.
  */
 export interface AuthScreenProps {
-  onLogin: (token: string, email: string) => void;
+  onLogin: (token: string, username: string) => void;
 }
 
 /**
@@ -17,13 +17,13 @@ export interface AuthScreenProps {
  */
 export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
   const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async () => {
-    if (!email || !password) {
+    if (!username || !password) {
       setError("Please fill in all fields.");
       return;
     }
@@ -31,16 +31,19 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
     setError("");
 
     try {
-      // Logic from monolithic file: if register mode, call register then login (simplified mockup behavior)
-      
       if (mode === 'register') {
-        await api.register(email, password);
+        await api.register(username, password);
       }
-      const data = await api.login(email, password);
-      onLogin(data.token || "mock-jwt-token", email);
-    } catch {
-      // Fallback for UI preview without a real backend (matches original logic)
-      onLogin("mock-jwt-token", email);
+      const data = await api.login(username, password);
+
+      if (!data.token) {
+        throw new Error("Authentication succeeded but no token was returned.");
+      }
+
+      onLogin(data.token, username);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Authentication failed";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -76,30 +79,30 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
 
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-[13px] font-semibold text-slate-700 ml-0.5" htmlFor="email">Email</label>
-            <Input 
-              id="email"
-              type="email" 
-              placeholder="name@example.com" 
-              value={email} 
-              onChange={e => setEmail(e.target.value)} 
+            <label className="text-[13px] font-semibold text-slate-700 ml-0.5" htmlFor="username">Username</label>
+            <Input
+              id="username"
+              type="text"
+              placeholder="Enter your username"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
             />
           </div>
           <div className="space-y-1.5">
             <label className="text-[13px] font-semibold text-slate-700 ml-0.5" htmlFor="password">Password</label>
-            <Input 
+            <Input
               id="password"
-              type="password" 
-              placeholder="••••••••" 
-              value={password} 
+              type="password"
+              placeholder="••••••••"
+              value={password}
               onChange={e => setPassword(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
             />
           </div>
-          
-          <Button 
-            className="w-full mt-2" 
-            onClick={handleSubmit} 
+
+          <Button
+            className="w-full mt-2"
+            onClick={handleSubmit}
             isLoading={loading}
           >
             {mode === 'login' ? "Sign In" : "Create Account"}
@@ -108,7 +111,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
 
         <p className="text-center text-sm text-slate-500 mt-6">
           {mode === 'login' ? "Don't have an account? " : "Already have an account? "}
-          <button 
+          <button
             onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(""); }}
             className="text-violet-600 font-bold hover:underline"
           >

@@ -5,13 +5,13 @@ import { LogoutIcon } from '../../ui/Icons';
 
 /**
  * Props for the Header component.
- * @param email - The current user's email address.
+ * @param username - The current user's username.
  * @param onLogout - Callback to sign out the user.
  * @param search - Current search query value.
  * @param onSearchChange - Callback invoked when the search input changes.
  */
 export interface HeaderProps {
-  email: string;
+  username: string;
   onLogout: () => void;
   search: string;
   onSearchChange: (value: string) => void;
@@ -21,7 +21,7 @@ export interface HeaderProps {
  * Global application header containing branding, search functionality, and user controls.
  * Styled with Tailwind CSS to be sticky at the top of the dashboard.
  */
-export const Header: React.FC<HeaderProps> = ({ email, onLogout, search, onSearchChange }) => {
+export const Header: React.FC<HeaderProps> = ({ username, onLogout, search, onSearchChange }) => {
   return (
     <header className="bg-white border-b border-gray-100 sticky top-0 z-[100] h-16 flex items-center">
       <div className="max-w-[1000px] w-full mx-auto px-5 flex items-center justify-between gap-4">
@@ -50,7 +50,7 @@ export const Header: React.FC<HeaderProps> = ({ email, onLogout, search, onSearc
         {/* User Actions */}
         <div className="flex items-center gap-4 flex-none">
           <span className="text-sm font-medium text-gray-500 hidden md:inline">
-            {email}
+            {username}
           </span>
           <Button 
              variant="icon" 

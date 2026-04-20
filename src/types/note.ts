@@ -13,5 +13,5 @@ export interface Note {
 
 export interface AuthState {
   token: string;
-  email: string;
+  username: string;
 }
